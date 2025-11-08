@@ -5,12 +5,10 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "favorite_recipes")
 data class FavoriteRecipe(
-    @PrimaryKey
-    val recipeId: String,
+    @PrimaryKey val id: String,
     val name: String,
-    val thumbnail: String? = null,
-    val category: String? = null,
-    val area: String? = null,
+    val imageUrl: String?,
+    // ADDED: A field to store the timestamp. We'll default it to the current time.
     val addedAt: Long = System.currentTimeMillis()
 )
 

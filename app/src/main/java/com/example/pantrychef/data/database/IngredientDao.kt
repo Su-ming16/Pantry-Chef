@@ -3,6 +3,7 @@ package com.example.pantrychef.data.database
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.pantrychef.data.model.Ingredient
 import kotlinx.coroutines.flow.Flow
@@ -11,17 +12,18 @@ import kotlinx.coroutines.flow.Flow
 interface IngredientDao {
     @Query("SELECT * FROM ingredients ORDER BY name ASC")
     fun getAllIngredients(): Flow<List<Ingredient>>
-    
+
     @Query("SELECT * FROM ingredients WHERE name LIKE :query || '%' ORDER BY name ASC")
     fun searchIngredients(query: String): Flow<List<Ingredient>>
-    
-    @Insert
-    suspend fun insertIngredient(ingredient: Ingredient): Long
-    
+
+    // MODIFIED:
+    // 1. Added onConflict strategy to handle cases where you try to insert an
+    //    ingredient that already exists. It will simply replace it.
+    // 2. Removed the `: Long` return type. Since the primary key is now a String,
+    //    returning the auto-generated ID is no longer relevant.
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertIngredient(ingredient: Ingredient)
     @Delete
     suspend fun deleteIngredient(ingredient: Ingredient)
-    
-    @Query("DELETE FROM ingredients WHERE id = :id")
-    suspend fun deleteIngredientById(id: Long)
-}
 
+}

@@ -10,7 +10,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.pantrychef.databinding.FragmentDiscoverRecipesBinding
-import com.example.pantrychef.ui.ViewModelFactory
 import com.example.pantrychef.ui.common.createStateView
 import kotlinx.coroutines.launch
 
