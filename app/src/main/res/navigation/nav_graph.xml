@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/myPantryFragment">
+
+    <fragment
+        android:id="@+id/myPantryFragment"
+        android:name="com.example.pantrychef.ui.pantry.MyPantryFragment"
+        android:label="My Pantry"
+        tools:layout="@layout/fragment_my_pantry">
+        <action
+            android:id="@+id/action_myPantryFragment_to_recipeDetailFragment"
+            app:destination="@id/recipeDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/discoverRecipesFragment"
+        android:name="com.example.pantrychef.ui.discover.DiscoverRecipesFragment"
+        android:label="Discover Recipes"
+        tools:layout="@layout/fragment_discover_recipes">
+        <action
+            android:id="@+id/action_discoverRecipesFragment_to_recipeDetailFragment"
+            app:destination="@id/recipeDetailFragment">
+            <argument
+                android:name="recipeId"
+                app:argType="string" />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/myFavoritesFragment"
+        android:name="com.example.pantrychef.ui.favorites.MyFavoritesFragment"
+        android:label="My Favorites"
+        tools:layout="@layout/fragment_my_favorites">
+        <action
+            android:id="@+id/action_myFavoritesFragment_to_recipeDetailFragment"
+            app:destination="@id/recipeDetailFragment">
+            <argument
+                android:name="recipeId"
+                app:argType="string" />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/recipeDetailFragment"
+        android:name="com.example.pantrychef.ui.detail.RecipeDetailFragment"
+        android:label="Recipe Detail"
+        tools:layout="@layout/fragment_recipe_detail">
+        <argument
+            android:name="recipeId"
+            app:argType="string" />
+    </fragment>
+
+</navigation>
+

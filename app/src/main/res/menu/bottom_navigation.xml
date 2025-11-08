@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/myPantryFragment"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="My Pantry" />
+    
+    <item
+        android:id="@+id/discoverRecipesFragment"
+        android:icon="@android:drawable/ic_menu_search"
+        android:title="Discover Recipes" />
+    
+    <item
+        android:id="@+id/myFavoritesFragment"
+        android:icon="@android:drawable/btn_star_big_on"
+        android:title="My Favorites" />
+</menu>
+
