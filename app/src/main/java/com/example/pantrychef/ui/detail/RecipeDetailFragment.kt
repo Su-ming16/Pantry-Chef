@@ -10,7 +10,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.pantrychef.databinding.FragmentRecipeDetailBinding
-import com.example.pantrychef.ui.ViewModelFactory
 import com.example.pantrychef.ui.common.createStateView
 import kotlinx.coroutines.launch
 
