@@ -20,12 +20,15 @@ class RecipeDetailFragment : Fragment() {
     private var _binding: FragmentRecipeDetailBinding? = null
     private val binding get() = _binding!!
     
-    private val viewModel: RecipeDetailViewModel by viewModels {
-        ViewModelFactory((requireActivity().application as PantryChefApplication).repository)
+    private val viewModel: RecipeDetailViewModel by viewModels(ownerProducer = { this }) {
+        val app = (requireActivity().application as? PantryChefApplication)
+            ?: throw IllegalStateException("Application is not PantryChefApplication")
+        ViewModelFactory(app.repository)
     }
     
     private lateinit var adapter: IngredientDetailAdapter
     private lateinit var stateView: com.example.pantrychef.ui.common.StateView
+    private var lastLoadedRecipeId: String? = null
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,75 +39,158 @@ class RecipeDetailFragment : Fragment() {
         return binding.root
     }
     
+    override fun onResume() {
+        super.onResume()
+        val recipeId = arguments?.getString("recipeId")
+        android.util.Log.d("RecipeDetail", "onResume: recipeId=$recipeId, lastLoaded=$lastLoadedRecipeId")
+        if (!recipeId.isNullOrBlank() && recipeId != lastLoadedRecipeId) {
+            android.util.Log.d("RecipeDetail", "Loading new recipe in onResume: $recipeId")
+            lastLoadedRecipeId = recipeId
+            viewModel.loadRecipeDetail(recipeId)
+        }
+    }
+    
+    override fun setArguments(args: Bundle?) {
+        super.setArguments(args)
+        android.util.Log.d("RecipeDetail", "setArguments called: recipeId=${args?.getString("recipeId")}")
+        lastLoadedRecipeId = null
+    }
+    
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        val recipeId = arguments?.getString("recipeId") ?: ""
-        
-        adapter = IngredientDetailAdapter()
-        binding.rvIngredients.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvIngredients.adapter = adapter
-        
-        stateView = (binding.root as ViewGroup).createStateView(binding.root)
-        
-        viewModel.loadRecipeDetail(recipeId)
+        try {
+            adapter = IngredientDetailAdapter()
+            binding.rvIngredients.layoutManager = LinearLayoutManager(context ?: return)
+            binding.rvIngredients.adapter = adapter
+            
+            val scrollView = binding.root as? androidx.core.widget.NestedScrollView
+            if (scrollView != null) {
+                val contentContainer = scrollView.getChildAt(0) as? ViewGroup
+                if (contentContainer != null) {
+                    stateView = contentContainer.createStateView(contentContainer)
+                } else {
+                    stateView = (binding.root as ViewGroup).createStateView(binding.root)
+                }
+            } else {
+                stateView = (binding.root as ViewGroup).createStateView(binding.root)
+            }
+            
+            val recipeId = arguments?.getString("recipeId") ?: savedInstanceState?.getString("recipeId")
+            android.util.Log.d("RecipeDetail", "onViewCreated: recipeId=$recipeId, lastLoaded=$lastLoadedRecipeId")
+            if (recipeId.isNullOrBlank()) {
+                stateView.showError {
+                    if (isAdded && activity != null) {
+                        activity?.onBackPressedDispatcher?.onBackPressed()
+                    }
+                }
+                return
+            }
+            
+            if (recipeId != lastLoadedRecipeId) {
+                lastLoadedRecipeId = recipeId
+                viewModel.loadRecipeDetail(recipeId)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            if (::stateView.isInitialized) {
+                stateView.showError {
+                    if (isAdded && activity != null) {
+                        activity?.onBackPressedDispatcher?.onBackPressed()
+                    }
+                }
+            }
+            return
+        }
         
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.uiState.collect { state ->
-                when (state) {
-                    is DetailUiState.Loading -> {
-                        stateView.showLoading()
-                    }
-                    is DetailUiState.Success -> {
-                        stateView.showContent()
-                        val detail = state.detail
-                        binding.tvRecipeName.text = detail.name
-                        binding.tvCategoryArea.text = buildString {
-                            if (!detail.category.isNullOrBlank()) {
-                                append(detail.category)
+            try {
+                viewModel.uiState.collect { state ->
+                    if (!isAdded) return@collect
+                    
+                    android.util.Log.d("RecipeDetail", "UI State changed: ${state::class.simpleName}")
+                    when (state) {
+                        is DetailUiState.Loading -> {
+                            stateView.showLoading()
+                        }
+                        is DetailUiState.Success -> {
+                            android.util.Log.d("RecipeDetail", "Displaying detail: name=${state.detail.name}, id=${state.detail.id}")
+                            stateView.showContent()
+                            val detail = state.detail
+                            binding.tvRecipeName.text = detail.name
+                            binding.tvCategoryArea.text = buildString {
+                                if (!detail.category.isNullOrBlank()) {
+                                    append(detail.category)
+                                }
+                                if (!detail.area.isNullOrBlank()) {
+                                    if (isNotEmpty()) append(" • ")
+                                    append(detail.area)
+                                }
                             }
-                            if (!detail.area.isNullOrBlank()) {
-                                if (isNotEmpty()) append(" • ")
-                                append(detail.area)
+                            binding.tvInstructions.text = detail.instructions ?: ""
+                            
+                            if (!detail.image.isNullOrBlank()) {
+                                val context = context ?: return@collect
+                                Glide.with(context)
+                                    .load(detail.image)
+                                    .placeholder(android.R.drawable.ic_menu_gallery)
+                                    .error(android.R.drawable.ic_menu_gallery)
+                                    .into(binding.ivRecipeImage)
+                            } else {
+                                binding.ivRecipeImage.setImageResource(android.R.drawable.ic_menu_gallery)
+                            }
+                            
+                            adapter.submitList(detail.ingredients)
+                        }
+                        is DetailUiState.Error -> {
+                            android.util.Log.e("RecipeDetail", "Error state: ${state.message}")
+                            stateView.showError {
+                                viewModel.retry()
                             }
                         }
-                        binding.tvInstructions.text = detail.instructions ?: ""
-                        
-                        if (!detail.image.isNullOrBlank()) {
-                            Glide.with(requireContext())
-                                .load(detail.image)
-                                .placeholder(android.R.drawable.ic_menu_gallery)
-                                .error(android.R.drawable.ic_menu_gallery)
-                                .into(binding.ivRecipeImage)
-                        }
-                        
-                        adapter.submitList(detail.ingredients)
                     }
-                    is DetailUiState.Error -> {
-                        stateView.showError {
-                            viewModel.retry()
-                        }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                if (isAdded && ::stateView.isInitialized) {
+                    stateView.showError {
+                        activity?.onBackPressedDispatcher?.onBackPressed()
                     }
                 }
             }
         }
         
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.isFavorite.collect { isFavorite ->
-                binding.btnFavorite.setImageResource(
-                    if (isFavorite) android.R.drawable.btn_star_big_on
-                    else android.R.drawable.btn_star_big_off
-                )
+            try {
+                viewModel.isFavorite.collect { isFavorite ->
+                    if (!isAdded) return@collect
+                    binding.btnFavorite.setImageResource(
+                        if (isFavorite) android.R.drawable.btn_star_big_on
+                        else android.R.drawable.btn_star_big_off
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
         
         binding.btnFavorite.setOnClickListener {
-            val recipeId = arguments?.getString("recipeId") ?: return@setOnClickListener
+            val currentRecipeId = arguments?.getString("recipeId")
+            if (currentRecipeId.isNullOrBlank()) {
+                return@setOnClickListener
+            }
             val recipeName = binding.tvRecipeName.text.toString()
             val image = viewModel.uiState.value.let {
                 if (it is DetailUiState.Success) it.detail.image else null
             }
-            viewModel.toggleFavorite(recipeId, recipeName, image)
+            viewModel.toggleFavorite(currentRecipeId, recipeName, image)
+        }
+    }
+    
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        arguments?.getString("recipeId")?.let {
+            outState.putString("recipeId", it)
         }
     }
     

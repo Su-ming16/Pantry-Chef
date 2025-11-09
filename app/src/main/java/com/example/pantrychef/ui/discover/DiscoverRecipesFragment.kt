@@ -40,10 +40,14 @@ class DiscoverRecipesFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         adapter = RecipeAdapter { recipe ->
+            android.util.Log.d("DiscoverRecipes", "Clicking recipe: id=${recipe.id}, name=${recipe.name}")
             val action = DiscoverRecipesFragmentDirections.actionDiscoverRecipesFragmentToRecipeDetailFragment(
                 recipeId = recipe.id
             )
-            findNavController().navigate(action)
+            val navOptions = androidx.navigation.NavOptions.Builder()
+                .setPopUpTo(findNavController().graph.startDestinationId, false)
+                .build()
+            findNavController().navigate(action, navOptions)
         }
         
         binding.rvRecipes.layoutManager = LinearLayoutManager(requireContext())
