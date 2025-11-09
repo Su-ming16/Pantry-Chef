@@ -8,13 +8,11 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-// IMPORTANT: Make sure this import is correct. It might be ...ViewModelFactory from a different package.
-// Let's use the one we defined in ui.common
-import com.example.pantrychef.ui.common.ViewModelFactory
 import com.example.pantrychef.PantryChefApplication
+import com.example.pantrychef.R
 import com.example.pantrychef.databinding.FragmentMyPantryBinding
-// Assuming IngredientAdapter exists. If not, this is Role C's task.
-// import com.example.pantrychef.ui.pantry.IngredientAdapter
+import com.example.pantrychef.ui.common.ViewModelFactory
+import com.example.pantrychef.ui.common.createStateView
 import kotlinx.coroutines.launch
 
 class MyPantryFragment : Fragment() {
@@ -27,6 +25,7 @@ class MyPantryFragment : Fragment() {
     }
 
     private lateinit var adapter: IngredientAdapter
+    private lateinit var stateView: com.example.pantrychef.ui.common.StateView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,9 +46,16 @@ class MyPantryFragment : Fragment() {
         binding.rvIngredients.layoutManager = LinearLayoutManager(requireContext())
         binding.rvIngredients.adapter = adapter
 
+        stateView = (binding.root as ViewGroup).createStateView(binding.rvIngredients)
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.ingredients.collect { ingredients ->
-                adapter.submitList(ingredients)
+                if (ingredients.isEmpty()) {
+                    stateView.showEmpty(getString(R.string.empty_ingredients))
+                } else {
+                    stateView.showContent()
+                    adapter.submitList(ingredients)
+                }
             }
         }
 

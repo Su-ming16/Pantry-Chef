@@ -79,6 +79,9 @@ dependencies {
     // Glide
     implementation(libs.glide)
     
+    // Kotlin Reflection
+    implementation(libs.kotlin.reflect)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

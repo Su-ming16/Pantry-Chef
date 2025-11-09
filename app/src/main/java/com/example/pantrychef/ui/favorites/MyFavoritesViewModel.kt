@@ -20,7 +20,15 @@ class MyFavoritesViewModel(
     init {
         viewModelScope.launch {
             recipeRepository.getAllFavorites()
-                .collect { _favorites.value = it }
+                .collect { favoriteRecipes ->
+                    _favorites.value = favoriteRecipes.map { favorite ->
+                        Recipe(
+                            id = favorite.id,
+                            name = favorite.name,
+                            thumbnail = favorite.imageUrl
+                        )
+                    }
+                }
         }
     }
 }

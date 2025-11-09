@@ -23,6 +23,18 @@ class DiscoverRecipesViewModel(
     private val _uiState = MutableStateFlow<DiscoverUiState>(DiscoverUiState.Empty)
     val uiState: StateFlow<DiscoverUiState> = _uiState.asStateFlow()
     
+    private val _availableIngredients = MutableStateFlow<List<String>>(emptyList())
+    val availableIngredients: StateFlow<List<String>> = _availableIngredients.asStateFlow()
+    
+    init {
+        viewModelScope.launch {
+            recipeRepository.getAllIngredients()
+                .collect { ingredients ->
+                    _availableIngredients.value = ingredients.map { it.name }
+                }
+        }
+    }
+    
     fun searchRecipes(ingredient: String) {
         if (ingredient.isBlank()) {
             _uiState.value = DiscoverUiState.Empty
@@ -32,24 +44,32 @@ class DiscoverRecipesViewModel(
         _uiState.value = DiscoverUiState.Loading
         
         viewModelScope.launch {
-            recipeRepository.searchRecipesByIngredient(ingredient)
-                .collect { result ->
-                    result.getOrNull()?.let { recipes ->
-                        _uiState.value = if (recipes.isEmpty()) {
-                            DiscoverUiState.Empty
-                        } else {
-                            DiscoverUiState.Success(recipes)
-                        }
-                    } ?: run {
-                        val error = result.exceptionOrNull()
-                        _uiState.value = DiscoverUiState.Error(error?.message ?: "Loading failed")
-                    }
+            val result = recipeRepository.searchRecipesByIngredient(ingredient)
+            if (result.isSuccess) {
+                val recipes = result.getOrNull() ?: emptyList()
+                if (recipes.isEmpty()) {
+                    _uiState.value = DiscoverUiState.Empty
+                } else {
+                    _uiState.value = DiscoverUiState.Success(recipes)
                 }
+            } else {
+                val errorMsg = result.exceptionOrNull()?.message ?: "Loading failed"
+                _uiState.value = DiscoverUiState.Error(errorMsg)
+            }
         }
     }
     
     fun retry(ingredient: String) {
         searchRecipes(ingredient)
+    }
+    
+    fun searchWithFirstAvailableIngredient() {
+        val firstIngredient = _availableIngredients.value.firstOrNull()
+        if (firstIngredient != null) {
+            searchRecipes(firstIngredient)
+        } else {
+            _uiState.value = DiscoverUiState.Empty
+        }
     }
 }
 

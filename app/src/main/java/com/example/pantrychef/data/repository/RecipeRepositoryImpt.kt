@@ -17,13 +17,10 @@ class RecipeRepositoryImpl(
     private val apiService: TheMealDbApiService
 ) : RecipeRepository {
 
-    // --- Ingredient Implementations ---
     override fun getAllIngredients(): Flow<List<Ingredient>> = ingredientDao.getAllIngredients()
     override suspend fun addIngredient(ingredient: Ingredient) = ingredientDao.insertIngredient(ingredient)
     override suspend fun deleteIngredient(ingredient: Ingredient) = ingredientDao.deleteIngredient(ingredient)
     override fun searchIngredients(query: String): Flow<List<Ingredient>> = ingredientDao.searchIngredients(query)
-
-    // --- Recipe Implementations ---
     override suspend fun searchRecipesByIngredient(ingredientName: String): Result<List<Recipe>> {
         return try {
             val response = apiService.searchRecipesByIngredient(ingredientName)
@@ -44,7 +41,6 @@ class RecipeRepositoryImpl(
         }
     }
 
-    // --- Favorite Implementations ---
     override fun getAllFavorites(): Flow<List<FavoriteRecipe>> = favoriteRecipeDao.getAllFavorites()
     override fun isFavorite(recipeId: String): Flow<Boolean> = favoriteRecipeDao.isFavorite(recipeId)
     override suspend fun removeFavorite(recipeId: String) = favoriteRecipeDao.deleteFavoriteById(recipeId)

@@ -39,15 +39,18 @@ class RecipeDetailViewModel(
         }
         
         viewModelScope.launch {
-            recipeRepository.getRecipeDetail(recipeId)
-                .collect { result ->
-                    result.getOrNull()?.let { detail ->
-                        _uiState.value = DetailUiState.Success(detail)
-                    } ?: run {
-                        val error = result.exceptionOrNull()
-                        _uiState.value = DetailUiState.Error(error?.message ?: "Loading failed")
-                    }
+            val result = recipeRepository.getRecipeDetails(recipeId)
+            if (result.isSuccess) {
+                val detail = result.getOrNull()
+                if (detail != null) {
+                    _uiState.value = DetailUiState.Success(detail)
+                } else {
+                    _uiState.value = DetailUiState.Error("Recipe not found")
                 }
+            } else {
+                val errorMsg = result.exceptionOrNull()?.message ?: "Loading failed"
+                _uiState.value = DetailUiState.Error(errorMsg)
+            }
         }
     }
     

@@ -16,11 +16,6 @@ interface IngredientDao {
     @Query("SELECT * FROM ingredients WHERE name LIKE :query || '%' ORDER BY name ASC")
     fun searchIngredients(query: String): Flow<List<Ingredient>>
 
-    // MODIFIED:
-    // 1. Added onConflict strategy to handle cases where you try to insert an
-    //    ingredient that already exists. It will simply replace it.
-    // 2. Removed the `: Long` return type. Since the primary key is now a String,
-    //    returning the auto-generated ID is no longer relevant.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIngredient(ingredient: Ingredient)
     @Delete

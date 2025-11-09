@@ -9,7 +9,9 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.pantrychef.PantryChefApplication
 import com.example.pantrychef.databinding.FragmentDiscoverRecipesBinding
+import com.example.pantrychef.ui.common.ViewModelFactory
 import com.example.pantrychef.ui.common.createStateView
 import kotlinx.coroutines.launch
 
@@ -18,7 +20,9 @@ class DiscoverRecipesFragment : Fragment() {
     private var _binding: FragmentDiscoverRecipesBinding? = null
     private val binding get() = _binding!!
     
-    private val viewModel: DiscoverRecipesViewModel by viewModels { ViewModelFactory() }
+    private val viewModel: DiscoverRecipesViewModel by viewModels {
+        ViewModelFactory((requireActivity().application as PantryChefApplication).repository)
+    }
     
     private lateinit var adapter: RecipeAdapter
     private lateinit var stateView: com.example.pantrychef.ui.common.StateView
@@ -59,7 +63,7 @@ class DiscoverRecipesFragment : Fragment() {
                     }
                     is DiscoverUiState.Error -> {
                         stateView.showError {
-                            viewModel.retry("chicken")
+                            viewModel.searchWithFirstAvailableIngredient()
                         }
                     }
                     is DiscoverUiState.Empty -> {
@@ -69,8 +73,16 @@ class DiscoverRecipesFragment : Fragment() {
             }
         }
         
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.availableIngredients.collect { ingredients ->
+                if (ingredients.isEmpty() && viewModel.uiState.value !is DiscoverUiState.Empty) {
+                    viewModel.searchWithFirstAvailableIngredient()
+                }
+            }
+        }
+        
         binding.btnCookNow.setOnClickListener {
-            viewModel.searchRecipes("chicken")
+            viewModel.searchWithFirstAvailableIngredient()
         }
     }
     

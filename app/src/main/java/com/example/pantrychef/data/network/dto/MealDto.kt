@@ -2,8 +2,6 @@ package com.example.pantrychef.data.network.dto
 
 import com.google.gson.annotations.SerializedName
 
-// This data class models a single recipe from TheMealDB API.
-// It includes all possible fields for ingredients and measures.
 data class MealDto(
     @SerializedName("idMeal") val id: String,
     @SerializedName("strMeal") val name: String,
@@ -12,7 +10,6 @@ data class MealDto(
     @SerializedName("strCategory") val category: String?,
     @SerializedName("strArea") val area: String?,
 
-    // --- Ingredients 1-20 ---
     @SerializedName("strIngredient1") val ingredient1: String?,
     @SerializedName("strIngredient2") val ingredient2: String?,
     @SerializedName("strIngredient3") val ingredient3: String?,
@@ -34,7 +31,6 @@ data class MealDto(
     @SerializedName("strIngredient19") val ingredient19: String?,
     @SerializedName("strIngredient20") val ingredient20: String?,
 
-    // --- Measures 1-20 ---
     @SerializedName("strMeasure1") val measure1: String?,
     @SerializedName("strMeasure2") val measure2: String?,
     @SerializedName("strMeasure3") val measure3: String?,

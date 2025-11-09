@@ -9,7 +9,9 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.pantrychef.PantryChefApplication
 import com.example.pantrychef.databinding.FragmentMyFavoritesBinding
+import com.example.pantrychef.ui.common.ViewModelFactory
 import com.example.pantrychef.ui.common.createStateView
 import com.example.pantrychef.ui.discover.RecipeAdapter
 import kotlinx.coroutines.launch
@@ -19,7 +21,9 @@ class MyFavoritesFragment : Fragment() {
     private var _binding: FragmentMyFavoritesBinding? = null
     private val binding get() = _binding!!
     
-    private val viewModel: MyFavoritesViewModel by viewModels { ViewModelFactory() }
+    private val viewModel: MyFavoritesViewModel by viewModels {
+        ViewModelFactory((requireActivity().application as PantryChefApplication).repository)
+    }
     
     private lateinit var adapter: RecipeAdapter
     private lateinit var stateView: com.example.pantrychef.ui.common.StateView

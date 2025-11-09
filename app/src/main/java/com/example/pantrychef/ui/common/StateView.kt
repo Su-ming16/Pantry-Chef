@@ -32,10 +32,10 @@ class StateView(
         errorView.isVisible = false
         
         if (description != null) {
-            val descriptionView = emptyView.findViewById<android.widget.TextView>(
+            val tvDescription = emptyView.findViewById<android.widget.TextView>(
                 com.example.pantrychef.R.id.tvEmptyDescription
             )
-            descriptionView?.text = description
+            tvDescription?.text = description
         }
     }
     
@@ -58,24 +58,23 @@ fun ViewGroup.createStateView(
     emptyLayoutId: Int = com.example.pantrychef.R.layout.view_state_empty,
     errorLayoutId: Int = com.example.pantrychef.R.layout.view_state_error
 ): StateView {
-    val loadingView = View.inflate(context, loadingLayoutId, null).apply {
-        layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-    }
-    val emptyView = View.inflate(context, emptyLayoutId, null).apply {
-        layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-    }
-    val errorView = View.inflate(context, errorLayoutId, null).apply {
-        layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-    }
+    val loadingView = View.inflate(context, loadingLayoutId, null)
+    loadingView.layoutParams = ViewGroup.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.MATCH_PARENT
+    )
+    
+    val emptyView = View.inflate(context, emptyLayoutId, null)
+    emptyView.layoutParams = ViewGroup.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.MATCH_PARENT
+    )
+    
+    val errorView = View.inflate(context, errorLayoutId, null)
+    errorView.layoutParams = ViewGroup.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.MATCH_PARENT
+    )
     
     addView(loadingView)
     addView(emptyView)

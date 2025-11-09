@@ -20,17 +20,17 @@ class MyPantryViewModel(
     init {
         viewModelScope.launch {
             repository.getAllIngredients()
-                .collect { ingredientList -> _ingredients.value = ingredientList }
+                .collect { ingredientList -> 
+                    _ingredients.value = ingredientList.sortedBy { it.name.lowercase() }
+                }
         }
     }
 
     private val _searchSuggestions = MutableStateFlow<List<Ingredient>>(emptyList())
     val searchSuggestions: StateFlow<List<Ingredient>> = _searchSuggestions.asStateFlow()
 
-    // THIS FUNCTION IS NOW FULLY IMPLEMENTED
     fun searchIngredients(query: String) {
         viewModelScope.launch {
-            // No longer empty, it now correctly calls the repository
             repository.searchIngredients(query)
                 .collect { suggestions ->
                     _searchSuggestions.value = suggestions

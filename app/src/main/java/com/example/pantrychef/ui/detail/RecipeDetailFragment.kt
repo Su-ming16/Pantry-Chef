@@ -9,7 +9,9 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.example.pantrychef.PantryChefApplication
 import com.example.pantrychef.databinding.FragmentRecipeDetailBinding
+import com.example.pantrychef.ui.common.ViewModelFactory
 import com.example.pantrychef.ui.common.createStateView
 import kotlinx.coroutines.launch
 
@@ -18,7 +20,9 @@ class RecipeDetailFragment : Fragment() {
     private var _binding: FragmentRecipeDetailBinding? = null
     private val binding get() = _binding!!
     
-    private val viewModel: RecipeDetailViewModel by viewModels { ViewModelFactory() }
+    private val viewModel: RecipeDetailViewModel by viewModels {
+        ViewModelFactory((requireActivity().application as PantryChefApplication).repository)
+    }
     
     private lateinit var adapter: IngredientDetailAdapter
     private lateinit var stateView: com.example.pantrychef.ui.common.StateView
