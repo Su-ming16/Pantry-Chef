@@ -140,6 +140,19 @@ class RecipeDetailFragment : Fragment() {
                                 binding.ivRecipeImage.setImageResource(android.R.drawable.ic_menu_gallery)
                             }
                             
+                            if (detail.missingIngredients.isNotEmpty()) {
+                                binding.cardMissingIngredients.visibility = android.view.View.VISIBLE
+                                binding.tvMissingIngredients.text = detail.missingIngredients.joinToString(", ")
+                            } else {
+                                binding.cardMissingIngredients.visibility = android.view.View.GONE
+                            }
+                            
+                            if (detail.requiredEquipment.isNotEmpty()) {
+                                binding.tvRequiredEquipment.text = detail.requiredEquipment.joinToString(", ")
+                            } else {
+                                binding.tvRequiredEquipment.text = "No special equipment required"
+                            }
+                            
                             adapter.submitList(detail.ingredients)
                         }
                         is DetailUiState.Error -> {
@@ -164,10 +177,21 @@ class RecipeDetailFragment : Fragment() {
             try {
                 viewModel.isFavorite.collect { isFavorite ->
                     if (!isAdded) return@collect
+                    android.util.Log.d("RecipeDetail", "isFavorite changed: $isFavorite, updating button icon")
+                    
                     binding.btnFavorite.setImageResource(
                         if (isFavorite) android.R.drawable.btn_star_big_on
                         else android.R.drawable.btn_star_big_off
                     )
+                    
+                    val colorInt = if (isFavorite) {
+                        android.graphics.Color.parseColor("#FFD700")
+                    } else {
+                        android.graphics.Color.GRAY
+                    }
+                    binding.btnFavorite.setColorFilter(colorInt)
+                    
+                    android.util.Log.d("RecipeDetail", "Button icon updated, isFavorite=$isFavorite, color=${if(isFavorite) "gold" else "gray"}")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -175,14 +199,17 @@ class RecipeDetailFragment : Fragment() {
         }
         
         binding.btnFavorite.setOnClickListener {
+            android.util.Log.d("RecipeDetail", "Favorite button clicked")
             val currentRecipeId = arguments?.getString("recipeId")
             if (currentRecipeId.isNullOrBlank()) {
+                android.util.Log.e("RecipeDetail", "RecipeId is blank, cannot toggle favorite")
                 return@setOnClickListener
             }
             val recipeName = binding.tvRecipeName.text.toString()
             val image = viewModel.uiState.value.let {
                 if (it is DetailUiState.Success) it.detail.image else null
             }
+            android.util.Log.d("RecipeDetail", "Toggling favorite: id=$currentRecipeId, name=$recipeName")
             viewModel.toggleFavorite(currentRecipeId, recipeName, image)
         }
     }

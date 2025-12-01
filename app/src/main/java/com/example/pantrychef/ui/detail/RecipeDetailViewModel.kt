@@ -8,6 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 sealed class DetailUiState {
@@ -28,6 +29,17 @@ class RecipeDetailViewModel(
     
     private var currentRecipeId: String? = null
     private var favoriteJob: Job? = null
+    
+    private val _availableIngredients = MutableStateFlow<List<String>>(emptyList())
+    
+    init {
+        viewModelScope.launch {
+            recipeRepository.getAllIngredients()
+                .collect { ingredients ->
+                    _availableIngredients.value = ingredients.map { it.name }
+                }
+        }
+    }
     
     fun loadRecipeDetail(recipeId: String) {
         android.util.Log.d("RecipeDetailViewModel", "loadRecipeDetail called with recipeId=$recipeId, current=$currentRecipeId")
@@ -53,7 +65,17 @@ class RecipeDetailViewModel(
         }
         
         viewModelScope.launch {
-            val result = recipeRepository.getRecipeDetails(recipeId)
+            val availableIngredients = _availableIngredients.value
+            android.util.Log.d("RecipeDetailViewModel", "Loading detail with availableIngredients: $availableIngredients (size=${availableIngredients.size})")
+            
+            if (availableIngredients.isEmpty()) {
+                kotlinx.coroutines.delay(100)
+                val retryIngredients = _availableIngredients.value
+                android.util.Log.d("RecipeDetailViewModel", "Retry after delay: $retryIngredients (size=${retryIngredients.size})")
+            }
+            
+            val finalIngredients = _availableIngredients.value
+            val result = recipeRepository.getRecipeDetails(recipeId, finalIngredients)
             android.util.Log.d("RecipeDetailViewModel", "API result for $recipeId: isSuccess=${result.isSuccess}")
             if (result.isSuccess) {
                 val detail = result.getOrNull()
@@ -73,20 +95,42 @@ class RecipeDetailViewModel(
     }
     
     fun toggleFavorite(recipeId: String, recipeName: String, thumbnail: String?) {
+        android.util.Log.d("RecipeDetailViewModel", "toggleFavorite called: id=$recipeId, name=$recipeName")
         viewModelScope.launch {
-            val currentFavorite = _isFavorite.value
-            if (currentFavorite) {
-                recipeRepository.removeFavorite(recipeId)
-                _isFavorite.value = false
-            } else {
-                recipeRepository.addFavorite(
-                    com.example.pantrychef.data.model.Recipe(
+            try {
+                val currentFavorite = _isFavorite.value
+                android.util.Log.d("RecipeDetailViewModel", "Current favorite state: $currentFavorite")
+                
+                val newFavoriteState = !currentFavorite
+                _isFavorite.value = newFavoriteState
+                
+                if (currentFavorite) {
+                    recipeRepository.removeFavorite(recipeId)
+                    android.util.Log.d("RecipeDetailViewModel", "Removed favorite: $recipeId")
+                } else {
+                    val recipe = com.example.pantrychef.data.model.Recipe(
                         id = recipeId,
                         name = recipeName,
                         thumbnail = thumbnail
                     )
-                )
-                _isFavorite.value = true
+                    recipeRepository.addFavorite(recipe)
+                    android.util.Log.d("RecipeDetailViewModel", "Added favorite: $recipeId")
+                }
+                
+                val updatedFavorite = recipeRepository.isFavorite(recipeId).first()
+                android.util.Log.d("RecipeDetailViewModel", "Updated favorite state from DB: $updatedFavorite")
+                if (updatedFavorite != newFavoriteState) {
+                    _isFavorite.value = updatedFavorite
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RecipeDetailViewModel", "Error toggling favorite", e)
+                e.printStackTrace()
+                val actualState = try {
+                    recipeRepository.isFavorite(recipeId).first()
+                } catch (ex: Exception) {
+                    false
+                }
+                _isFavorite.value = actualState
             }
         }
     }

@@ -30,6 +30,16 @@ class IngredientDetailAdapter : ListAdapter<IngredientItem, IngredientDetailAdap
         fun bind(item: IngredientItem) {
             binding.tvIngredientName.text = item.name
             binding.tvMeasure.text = item.measure ?: ""
+            
+            if (!item.isAvailable) {
+                binding.tvIngredientName.setTextColor(android.graphics.Color.parseColor("#E65100"))
+                binding.tvIngredientName.text = "⚠️ ${item.name}"
+                binding.tvIngredientName.textSize = 14f
+            } else {
+                binding.tvIngredientName.setTextColor(android.graphics.Color.parseColor("#212121"))
+                binding.tvIngredientName.text = item.name
+                binding.tvIngredientName.textSize = 14f
+            }
         }
     }
     

@@ -14,5 +14,10 @@
         android:id="@+id/myFavoritesFragment"
         android:icon="@android:drawable/btn_star_big_on"
         android:title="My Favorites" />
+    
+    <item
+        android:id="@+id/settingsFragment"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:title="Settings" />
 </menu>
 

@@ -5,8 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.pantrychef.PantryChefApplication
 import com.example.pantrychef.R
@@ -20,7 +21,7 @@ class MyPantryFragment : Fragment() {
     private var _binding: FragmentMyPantryBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: MyPantryViewModel by viewModels {
+    private val viewModel: MyPantryViewModel by activityViewModels {
         ViewModelFactory((requireActivity().application as PantryChefApplication).repository)
     }
 
@@ -74,6 +75,11 @@ class MyPantryFragment : Fragment() {
                 binding.etIngredient.text?.clear()
             }
             true
+        }
+
+        binding.btnCamera.setOnClickListener {
+            val action = MyPantryFragmentDirections.actionMyPantryFragmentToCameraFragment()
+            findNavController().navigate(action)
         }
     }
 

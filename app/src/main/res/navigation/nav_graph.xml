@@ -13,6 +13,9 @@
         <action
             android:id="@+id/action_myPantryFragment_to_recipeDetailFragment"
             app:destination="@id/recipeDetailFragment" />
+        <action
+            android:id="@+id/action_myPantryFragment_to_cameraFragment"
+            app:destination="@id/cameraFragment" />
     </fragment>
 
     <fragment
@@ -51,6 +54,32 @@
         <argument
             android:name="recipeId"
             app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.pantrychef.ui.settings.SettingsFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/cameraFragment"
+        android:name="com.example.pantrychef.ui.camera.CameraFragment"
+        android:label="Scan Ingredients"
+        tools:layout="@layout/fragment_camera">
+        <action
+            android:id="@+id/action_cameraFragment_to_ingredientConfirmFragment"
+            app:destination="@id/ingredientConfirmFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ingredientConfirmFragment"
+        android:name="com.example.pantrychef.ui.camera.IngredientConfirmFragment"
+        android:label="Confirm Ingredients"
+        tools:layout="@layout/fragment_ingredient_confirm">
+        <argument
+            android:name="ingredients"
+            app:argType="string[]" />
     </fragment>
 
 </navigation>

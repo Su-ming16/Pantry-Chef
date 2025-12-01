@@ -35,6 +35,12 @@ class RecipeAdapter(
             binding.tvCategory.text = recipe.category ?: ""
             binding.tvArea.text = recipe.area ?: ""
             
+            if (recipe.matchType == com.example.pantrychef.data.model.RecipeMatchType.PARTIAL_MATCH) {
+                binding.tvRecommendationTag.visibility = android.view.View.VISIBLE
+            } else {
+                binding.tvRecommendationTag.visibility = android.view.View.GONE
+            }
+            
             if (!recipe.thumbnail.isNullOrBlank()) {
                 Glide.with(binding.root)
                     .load(recipe.thumbnail)

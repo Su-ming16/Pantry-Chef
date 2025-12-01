@@ -5,11 +5,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.pantrychef.PantryChefApplication
+import com.example.pantrychef.data.model.Recipe
 import com.example.pantrychef.databinding.FragmentDiscoverRecipesBinding
 import com.example.pantrychef.ui.common.ViewModelFactory
 import com.example.pantrychef.ui.common.createStateView
@@ -20,7 +21,7 @@ class DiscoverRecipesFragment : Fragment() {
     private var _binding: FragmentDiscoverRecipesBinding? = null
     private val binding get() = _binding!!
     
-    private val viewModel: DiscoverRecipesViewModel by viewModels {
+    private val viewModel: DiscoverRecipesViewModel by activityViewModels {
         ViewModelFactory((requireActivity().application as PantryChefApplication).repository)
     }
     
@@ -65,6 +66,17 @@ class DiscoverRecipesFragment : Fragment() {
                         stateView.showContent()
                         adapter.submitList(state.recipes)
                     }
+                    is DiscoverUiState.SuccessWithRecommendations -> {
+                        stateView.showContent()
+                        val allRecipes = mutableListOf<Recipe>()
+                        if (state.fullMatchRecipes.isNotEmpty()) {
+                            allRecipes.addAll(state.fullMatchRecipes)
+                        }
+                        if (state.recommendedRecipes.isNotEmpty()) {
+                            allRecipes.addAll(state.recommendedRecipes)
+                        }
+                        adapter.submitList(allRecipes)
+                    }
                     is DiscoverUiState.Error -> {
                         stateView.showError {
                             viewModel.searchWithFirstAvailableIngredient()
@@ -73,14 +85,6 @@ class DiscoverRecipesFragment : Fragment() {
                     is DiscoverUiState.Empty -> {
                         stateView.showEmpty("Please add ingredients first, then click \"Cook Now\" button")
                     }
-                }
-            }
-        }
-        
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.availableIngredients.collect { ingredients ->
-                if (ingredients.isEmpty() && viewModel.uiState.value !is DiscoverUiState.Empty) {
-                    viewModel.searchWithFirstAvailableIngredient()
                 }
             }
         }

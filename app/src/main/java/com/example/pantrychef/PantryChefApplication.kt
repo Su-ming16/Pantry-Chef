@@ -13,6 +13,7 @@ class PantryChefApplication : Application() {
         RecipeRepositoryImpl(
             ingredientDao = database.ingredientDao(),
             favoriteRecipeDao = database.favoriteRecipeDao(),
+            equipmentDao = database.equipmentDao(),
             apiService = ApiClient.apiService
         )
     }
