@@ -78,7 +78,7 @@ class MyPantryFragment : Fragment() {
         }
 
         binding.btnCamera.setOnClickListener {
-            val action = MyPantryFragmentDirections.actionMyPantryFragmentToCameraFragment()
+            val action = MyPantryFragmentDirections.actionMyPantryFragmentToQuickAddFragment()
             findNavController().navigate(action)
         }
     }
