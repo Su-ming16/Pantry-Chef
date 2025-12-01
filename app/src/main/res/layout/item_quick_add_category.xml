@@ -1,17 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="12dp"
+    android:padding="8dp"
     android:background="?attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:id="@+id/tvToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="▼"
+            android:textSize="16sp"
+            android:paddingEnd="8dp"
+            android:textColor="?attr/colorPrimary" />
 
         <TextView
             android:id="@+id/tvCategory"
@@ -21,7 +30,7 @@
             android:text="Category"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="?attr/colorPrimary" />
+            android:textColor="?attr/colorOnSurface" />
 
         <TextView
             android:id="@+id/tvSelectAll"
@@ -36,16 +45,16 @@
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvSuggestions"
+        android:id="@+id/rvItems"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:paddingStart="24dp"
         android:nestedScrollingEnabled="false" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:background="?android:attr/listDivider" />
 
 </LinearLayout>

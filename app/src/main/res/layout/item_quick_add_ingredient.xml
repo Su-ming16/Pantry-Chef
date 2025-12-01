@@ -3,17 +3,16 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="8dp"
+    android:paddingVertical="4dp"
     android:background="?attr/selectableItemBackground">
 
     <CheckBox
-        android:id="@+id/cbIngredient"
+        android:id="@+id/cbItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Ingredient"
         android:textSize="16sp"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp" />
+        android:paddingVertical="8dp" />
 
 </LinearLayout>
 

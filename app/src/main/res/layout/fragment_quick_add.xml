@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="?attr/colorSurface">
 
-    <TextView
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Quick Add Ingredients"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:padding="16dp"
+        android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        android:textColor="@android:color/white" />
+        android:elevation="4dp"
+        app:title="Quick Add Ingredients"
+        app:titleTextColor="?attr/colorOnPrimary" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select ingredients from the categories below"
+        android:padding="16dp"
+        android:text="Select ingredients from categories below"
         android:textSize="14sp"
-        android:padding="12dp"
-        android:textColor="?attr/colorOnSurface" />
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:background="?attr/colorSurfaceVariant" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvIngredients"
+        android:id="@+id/rvCategories"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:clipToPadding="false" />
+        android:clipToPadding="false"
+        android:paddingBottom="16dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -42,15 +42,15 @@
 
         <Button
             android:id="@+id/btnCancel"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
-            android:text="Cancel"
-            style="?attr/materialButtonOutlinedStyle" />
+            android:text="Cancel" />
 
         <Button
-            android:id="@+id/btnConfirm"
+            android:id="@+id/btnAdd"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -61,4 +61,3 @@
     </LinearLayout>
 
 </LinearLayout>
-

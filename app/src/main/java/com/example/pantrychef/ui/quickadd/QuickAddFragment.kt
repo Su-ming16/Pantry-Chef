@@ -10,10 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.pantrychef.PantryChefApplication
-import com.example.pantrychef.R
 import com.example.pantrychef.databinding.FragmentQuickAddBinding
-import com.example.pantrychef.ui.camera.IngredientCategory
-import com.example.pantrychef.ui.camera.IngredientCategoryAdapter
 import com.example.pantrychef.ui.common.ViewModelFactory
 import com.example.pantrychef.ui.pantry.MyPantryViewModel
 import kotlinx.coroutines.launch
@@ -22,7 +19,7 @@ class QuickAddFragment : Fragment() {
 
     private var _binding: FragmentQuickAddBinding? = null
     private val binding get() = _binding!!
-    
+
     private val viewModel: MyPantryViewModel by activityViewModels {
         ViewModelFactory((requireActivity().application as PantryChefApplication).repository)
     }
@@ -42,10 +39,103 @@ class QuickAddFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val categories = getIngredientCategories()
-        setupRecyclerView(categories)
+        val categories = listOf(
+            IngredientCategory(
+                name = "🥬 Vegetables",
+                items = listOf(
+                    "Tomato", "Onion", "Carrot", "Lettuce", "Cabbage",
+                    "Cucumber", "Bell Pepper", "Broccoli", "Spinach", "Potato",
+                    "Celery", "Garlic", "Ginger", "Mushroom", "Corn",
+                    "Eggplant", "Zucchini", "Pumpkin", "Radish", "Bean Sprouts"
+                )
+            ),
+            IngredientCategory(
+                name = "🍎 Fruits",
+                items = listOf(
+                    "Apple", "Banana", "Orange", "Strawberry", "Grape",
+                    "Watermelon", "Lemon", "Lime", "Mango", "Pineapple",
+                    "Blueberry", "Peach", "Pear", "Cherry", "Kiwi",
+                    "Avocado", "Papaya", "Coconut", "Plum", "Raspberry"
+                )
+            ),
+            IngredientCategory(
+                name = "🍗 Meat & Poultry",
+                items = listOf(
+                    "Chicken", "Beef", "Pork", "Lamb", "Turkey",
+                    "Chicken Breast", "Ground Beef", "Bacon", "Sausage",
+                    "Ham", "Duck", "Veal"
+                )
+            ),
+            IngredientCategory(
+                name = "🐟 Seafood",
+                items = listOf(
+                    "Salmon", "Tuna", "Shrimp", "Fish", "Cod",
+                    "Crab", "Lobster", "Squid", "Tilapia", "Sardines",
+                    "Clams", "Mussels", "Scallops"
+                )
+            ),
+            IngredientCategory(
+                name = "🧀 Dairy & Eggs",
+                items = listOf(
+                    "Milk", "Cheese", "Butter", "Yogurt", "Cream",
+                    "Egg", "Cheddar", "Mozzarella", "Sour Cream",
+                    "Cream Cheese", "Parmesan", "Feta"
+                )
+            ),
+            IngredientCategory(
+                name = "🌾 Grains & Pasta",
+                items = listOf(
+                    "Rice", "Pasta", "Bread", "Flour", "Noodles",
+                    "Quinoa", "Oats", "Spaghetti", "Couscous", "Barley",
+                    "Tortilla", "Pita Bread", "Rice Noodles"
+                )
+            ),
+            IngredientCategory(
+                name = "🫘 Beans & Legumes",
+                items = listOf(
+                    "Black Beans", "Kidney Beans", "Chickpeas", "Lentils",
+                    "Peas", "Tofu", "Soybeans", "Green Beans", "Peanuts"
+                )
+            ),
+            IngredientCategory(
+                name = "🌰 Nuts & Seeds",
+                items = listOf(
+                    "Almonds", "Walnuts", "Cashews", "Peanuts", "Pistachios",
+                    "Sunflower Seeds", "Chia Seeds", "Sesame Seeds", "Pumpkin Seeds"
+                )
+            ),
+            IngredientCategory(
+                name = "🧂 Seasonings & Spices",
+                items = listOf(
+                    "Salt", "Pepper", "Garlic Powder", "Onion Powder", "Paprika",
+                    "Cumin", "Cinnamon", "Oregano", "Basil", "Thyme",
+                    "Rosemary", "Chili Powder", "Turmeric", "Ginger Powder"
+                )
+            ),
+            IngredientCategory(
+                name = "🫗 Oils & Sauces",
+                items = listOf(
+                    "Olive Oil", "Vegetable Oil", "Soy Sauce", "Vinegar",
+                    "Ketchup", "Mayonnaise", "Mustard", "Hot Sauce",
+                    "BBQ Sauce", "Sesame Oil", "Honey", "Sugar"
+                )
+            )
+        )
 
-        binding.btnConfirm.setOnClickListener {
+        adapter = IngredientCategoryAdapter(
+            categories = categories,
+            selectedIngredients = selectedIngredients,
+            onSelectionChanged = {
+                updateAddButton()
+            }
+        )
+
+        binding.rvCategories.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvCategories.adapter = adapter
+
+        updateAddButton()
+
+        binding.btnAdd.setOnClickListener {
             lifecycleScope.launch {
                 for (ingredient in selectedIngredients) {
                     viewModel.addIngredient(ingredient)
@@ -59,80 +149,9 @@ class QuickAddFragment : Fragment() {
         }
     }
 
-    private fun setupRecyclerView(categories: List<IngredientCategory>) {
-        adapter = IngredientCategoryAdapter(
-            categories = categories,
-            selectedIngredients = selectedIngredients,
-            onSelectionChanged = {
-                updateConfirmButton()
-            }
-        )
-
-        binding.rvIngredients.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvIngredients.adapter = adapter
-
-        updateConfirmButton()
-    }
-
-    private fun updateConfirmButton() {
-        binding.btnConfirm.text = "Add ${selectedIngredients.size} ingredient(s)"
-        binding.btnConfirm.isEnabled = selectedIngredients.isNotEmpty()
-    }
-
-    private fun getIngredientCategories(): List<IngredientCategory> {
-        return listOf(
-            IngredientCategory(
-                categoryName = "Vegetables",
-                suggestions = listOf(
-                    "Tomato", "Onion", "Carrot", "Lettuce", "Cabbage",
-                    "Cucumber", "Bell Pepper", "Broccoli", "Spinach", "Potato",
-                    "Celery", "Garlic", "Ginger", "Mushroom", "Corn", "Eggplant"
-                )
-            ),
-            IngredientCategory(
-                categoryName = "Fruits",
-                suggestions = listOf(
-                    "Apple", "Banana", "Orange", "Strawberry", "Grape",
-                    "Watermelon", "Lemon", "Lime", "Mango", "Pineapple",
-                    "Blueberry", "Peach", "Pear", "Cherry", "Kiwi"
-                )
-            ),
-            IngredientCategory(
-                categoryName = "Meat & Poultry",
-                suggestions = listOf(
-                    "Chicken", "Beef", "Pork", "Lamb", "Turkey",
-                    "Chicken Breast", "Ground Beef", "Bacon", "Sausage", "Ham"
-                )
-            ),
-            IngredientCategory(
-                categoryName = "Seafood",
-                suggestions = listOf(
-                    "Salmon", "Tuna", "Shrimp", "Fish", "Cod",
-                    "Crab", "Lobster", "Squid", "Tilapia"
-                )
-            ),
-            IngredientCategory(
-                categoryName = "Dairy & Eggs",
-                suggestions = listOf(
-                    "Milk", "Cheese", "Butter", "Yogurt", "Cream",
-                    "Cheddar", "Mozzarella", "Sour Cream", "Cream Cheese", "Egg"
-                )
-            ),
-            IngredientCategory(
-                categoryName = "Grains & Pasta",
-                suggestions = listOf(
-                    "Rice", "Pasta", "Bread", "Flour", "Noodles",
-                    "Quinoa", "Oats", "Spaghetti", "Couscous"
-                )
-            ),
-            IngredientCategory(
-                categoryName = "Condiments & Sauces",
-                suggestions = listOf(
-                    "Soy Sauce", "Olive Oil", "Vinegar", "Ketchup", "Mustard",
-                    "Mayonnaise", "Hot Sauce", "Honey", "Salt", "Pepper"
-                )
-            )
-        )
+    private fun updateAddButton() {
+        binding.btnAdd.text = "Add ${selectedIngredients.size} ingredient(s)"
+        binding.btnAdd.isEnabled = selectedIngredients.isNotEmpty()
     }
 
     override fun onDestroyView() {
@@ -140,4 +159,3 @@ class QuickAddFragment : Fragment() {
         _binding = null
     }
 }
-
