@@ -31,4 +31,8 @@ interface RecipeRepository {
     fun getAllEquipment(): Flow<List<com.example.pantrychef.data.model.Equipment>>
     suspend fun addEquipment(equipment: com.example.pantrychef.data.model.Equipment)
     suspend fun deleteEquipment(equipment: com.example.pantrychef.data.model.Equipment)
+    
+    // --- User Preference Functions ---
+    fun getUserPreference(): Flow<com.example.pantrychef.data.model.UserPreference?>
+    suspend fun updateUserPreference(preference: com.example.pantrychef.data.model.UserPreference)
 }

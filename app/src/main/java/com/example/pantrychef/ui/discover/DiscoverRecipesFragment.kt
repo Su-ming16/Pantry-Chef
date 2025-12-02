@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.pantrychef.PantryChefApplication
+import com.example.pantrychef.data.model.DietaryPreference
 import com.example.pantrychef.data.model.Recipe
 import com.example.pantrychef.databinding.FragmentDiscoverRecipesBinding
 import com.example.pantrychef.ui.common.ViewModelFactory
@@ -91,6 +92,34 @@ class DiscoverRecipesFragment : Fragment() {
         
         binding.btnCookNow.setOnClickListener {
             viewModel.searchWithFirstAvailableIngredient()
+        }
+        
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.currentPreference.collect { preference ->
+                updatePreferenceIndicator(preference)
+            }
+        }
+    }
+    
+    private fun updatePreferenceIndicator(preference: com.example.pantrychef.data.model.DietaryPreference) {
+        if (preference == com.example.pantrychef.data.model.DietaryPreference.NONE) {
+            binding.cardPreferenceIndicator.visibility = View.GONE
+        } else {
+            binding.cardPreferenceIndicator.visibility = View.VISIBLE
+            val message = when (preference) {
+                com.example.pantrychef.data.model.DietaryPreference.FITNESS -> 
+                    "${preference.icon} Fitness Mode Active - Showing high-protein recipes"
+                com.example.pantrychef.data.model.DietaryPreference.WEIGHT_LOSS -> 
+                    "${preference.icon} Weight Loss Mode - Showing low-calorie, light meals"
+                com.example.pantrychef.data.model.DietaryPreference.VEGETARIAN -> 
+                    "${preference.icon} Vegetarian Mode - Showing meat-free recipes"
+                com.example.pantrychef.data.model.DietaryPreference.QUICK_EASY -> 
+                    "${preference.icon} Quick & Easy Mode - Showing simple recipes"
+                com.example.pantrychef.data.model.DietaryPreference.KID_FRIENDLY -> 
+                    "${preference.icon} Kid Friendly Mode - Showing mild, familiar recipes"
+                else -> ""
+            }
+            binding.tvPreferenceIndicator.text = message
         }
     }
     

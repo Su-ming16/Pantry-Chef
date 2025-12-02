@@ -12,7 +12,8 @@ data class Recipe(
     val category: String? = null,
     val area: String? = null,
     val matchType: RecipeMatchType = RecipeMatchType.FULL_MATCH,
-    val missingIngredients: List<String> = emptyList()
+    val missingIngredients: List<String> = emptyList(),
+    val allIngredients: List<String> = emptyList()
 )
 
 data class RecipeDetail(

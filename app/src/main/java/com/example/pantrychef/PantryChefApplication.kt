@@ -14,6 +14,7 @@ class PantryChefApplication : Application() {
             ingredientDao = database.ingredientDao(),
             favoriteRecipeDao = database.favoriteRecipeDao(),
             equipmentDao = database.equipmentDao(),
+            userPreferenceDao = database.userPreferenceDao(),
             apiService = ApiClient.apiService
         )
     }

@@ -2,6 +2,7 @@ package com.example.pantrychef.ui.discover
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pantrychef.data.model.DietaryPreference
 import com.example.pantrychef.data.model.Recipe
 import com.example.pantrychef.data.repository.RecipeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,9 @@ class DiscoverRecipesViewModel(
     private val _availableEquipment = MutableStateFlow<List<String>>(emptyList())
     val availableEquipment: StateFlow<List<String>> = _availableEquipment.asStateFlow()
     
+    private val _currentPreference = MutableStateFlow<DietaryPreference>(DietaryPreference.NONE)
+    val currentPreference: StateFlow<DietaryPreference> = _currentPreference.asStateFlow()
+    
     init {
         viewModelScope.launch {
             recipeRepository.getAllIngredients()
@@ -45,6 +49,25 @@ class DiscoverRecipesViewModel(
             recipeRepository.getAllEquipment()
                 .collect { equipment ->
                     _availableEquipment.value = equipment.map { it.name }
+                }
+        }
+        
+        viewModelScope.launch {
+            recipeRepository.getUserPreference()
+                .collect { preference ->
+                    val newPreference = if (preference != null) {
+                        DietaryPreference.fromString(preference.dietaryPreference)
+                    } else {
+                        DietaryPreference.NONE
+                    }
+                    
+                    val oldPreference = _currentPreference.value
+                    _currentPreference.value = newPreference
+                    
+                    if (oldPreference != newPreference && _uiState.value !is DiscoverUiState.Empty && _uiState.value !is DiscoverUiState.Loading) {
+                        android.util.Log.d("DiscoverRecipesVM", "Preference changed from $oldPreference to $newPreference, clearing results")
+                        _uiState.value = DiscoverUiState.Empty
+                    }
                 }
         }
     }
@@ -79,14 +102,9 @@ class DiscoverRecipesViewModel(
     
     fun searchWithSmartMatching() {
         val ingredients = _availableIngredients.value
-        android.util.Log.d("DiscoverRecipesVM", "searchWithSmartMatching: ingredients=$ingredients")
+        android.util.Log.d("DiscoverRecipesVM", "searchWithSmartMatching: ingredients=$ingredients, currentPreference=${_currentPreference.value}")
         if (ingredients.isEmpty()) {
             _uiState.value = DiscoverUiState.Empty
-            return
-        }
-        
-        if (_uiState.value is DiscoverUiState.SuccessWithRecommendations || _uiState.value is DiscoverUiState.Success) {
-            android.util.Log.d("DiscoverRecipesVM", "Already have results, skipping search")
             return
         }
         

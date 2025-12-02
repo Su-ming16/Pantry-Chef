@@ -8,6 +8,7 @@ import com.example.pantrychef.ui.discover.DiscoverRecipesViewModel
 import com.example.pantrychef.ui.detail.RecipeDetailViewModel
 import com.example.pantrychef.ui.favorites.MyFavoritesViewModel
 import com.example.pantrychef.ui.settings.SettingsViewModel
+import com.example.pantrychef.ui.preferences.PreferenceViewModel
 
 class ViewModelFactory(
     private val repository: RecipeRepository
@@ -29,6 +30,9 @@ class ViewModelFactory(
         }
         if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
             return SettingsViewModel(repository) as T
+        }
+        if (modelClass.isAssignableFrom(PreferenceViewModel::class.java)) {
+            return PreferenceViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
     }

@@ -11,6 +11,11 @@ interface TheMealDbApiService {
         @Query("i") ingredient: String
     ): MealsResponseDto
 
+    @GET("api/json/v1/1/filter.php")
+    suspend fun searchRecipesByCategory(
+        @Query("c") category: String
+    ): MealsResponseDto
+
     @GET("api/json/v1/1/lookup.php")
     suspend fun getRecipeDetails(
         @Query("i") id: String

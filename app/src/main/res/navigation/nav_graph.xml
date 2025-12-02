@@ -60,7 +60,17 @@
         android:id="@+id/settingsFragment"
         android:name="com.example.pantrychef.ui.settings.SettingsFragment"
         android:label="Settings"
-        tools:layout="@layout/fragment_settings" />
+        tools:layout="@layout/fragment_settings">
+        <action
+            android:id="@+id/action_settingsFragment_to_preferenceFragment"
+            app:destination="@id/preferenceFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/preferenceFragment"
+        android:name="com.example.pantrychef.ui.preferences.PreferenceFragment"
+        android:label="Dietary Preferences"
+        tools:layout="@layout/fragment_preference" />
 
     <fragment
         android:id="@+id/quickAddFragment"

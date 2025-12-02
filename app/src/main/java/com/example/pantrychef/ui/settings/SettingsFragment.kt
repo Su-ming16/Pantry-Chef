@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.pantrychef.PantryChefApplication
 import com.example.pantrychef.databinding.FragmentSettingsBinding
@@ -46,6 +47,12 @@ class SettingsFragment : Fragment() {
         binding.rvEquipment.adapter = adapter
 
         stateView = (binding.root as ViewGroup).createStateView(binding.rvEquipment)
+
+        binding.btnPreferences.setOnClickListener {
+            findNavController().navigate(
+                SettingsFragmentDirections.actionSettingsFragmentToPreferenceFragment()
+            )
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.equipment.collect { equipmentList ->
