@@ -1,13 +1,11 @@
 package com.example.pantrychef.data.repository
 
-import com.example.pantrychef.data.database.EquipmentDao
 import com.example.pantrychef.data.database.FavoriteRecipeDao
 import com.example.pantrychef.data.database.IngredientDao
 import com.example.pantrychef.data.database.UserPreferenceDao
 import com.example.pantrychef.data.mapper.toRecipe
 import com.example.pantrychef.data.mapper.toRecipeDetail
 import com.example.pantrychef.data.model.DietaryPreference
-import com.example.pantrychef.data.model.Equipment
 import com.example.pantrychef.data.model.FavoriteRecipe
 import com.example.pantrychef.data.model.Ingredient
 import com.example.pantrychef.data.model.Recipe
@@ -15,13 +13,15 @@ import com.example.pantrychef.data.model.RecipeDetail
 import com.example.pantrychef.data.model.RecipeMatchType
 import com.example.pantrychef.data.model.UserPreference
 import com.example.pantrychef.data.network.TheMealDbApiService
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 
 class RecipeRepositoryImpl(
     private val ingredientDao: IngredientDao,
     private val favoriteRecipeDao: FavoriteRecipeDao,
-    private val equipmentDao: EquipmentDao,
     private val userPreferenceDao: UserPreferenceDao,
     private val apiService: TheMealDbApiService
 ) : RecipeRepository {
@@ -63,138 +63,194 @@ class RecipeRepositoryImpl(
     }
 
     override suspend fun searchRecipesWithSmartMatching(
-        availableIngredients: List<String>,
-        availableEquipment: List<String>
+        availableIngredients: List<String>
     ): Result<Pair<List<Recipe>, List<Recipe>>> {
         if (availableIngredients.isEmpty()) {
             return Result.success(Pair(emptyList(), emptyList()))
         }
 
         return try {
-            val allRecipes = mutableSetOf<String>()
-            val recipeMap = mutableMapOf<String, Recipe>()
+            coroutineScope {
+                val allRecipes = mutableSetOf<String>()
+                val recipeMap = mutableMapOf<String, Recipe>()
 
-            val currentPreference = userPreferenceDao.getUserPreference().firstOrNull()?.dietaryPreference
-            val preference = if (currentPreference != null) {
-                DietaryPreference.fromString(currentPreference)
-            } else {
-                DietaryPreference.NONE
-            }
-
-            android.util.Log.d("RecipeRepository", "Smart matching with preference: $preference")
-
-            when (preference) {
-                DietaryPreference.VEGETARIAN -> {
-                    android.util.Log.d("RecipeRepository", "Using Vegetarian category search")
-                    val response = apiService.searchRecipesByCategory("Vegetarian")
-                    response.meals?.take(15)?.forEach { mealDto ->
-                        if (!allRecipes.contains(mealDto.id)) {
-                            allRecipes.add(mealDto.id)
-                            recipeMap[mealDto.id] = mealDto.toRecipe()
-                        }
-                    }
+                val currentPreference = userPreferenceDao.getUserPreference().firstOrNull()?.dietaryPreference
+                val preference = if (currentPreference != null) {
+                    DietaryPreference.fromString(currentPreference)
+                } else {
+                    DietaryPreference.NONE
                 }
-                DietaryPreference.FITNESS -> {
-                    android.util.Log.d("RecipeRepository", "Searching protein-rich ingredients")
-                    val proteinIngredients = listOf("chicken", "fish", "egg", "beef").filter { protein ->
-                        availableIngredients.any { it.lowercase().contains(protein) }
-                    }.ifEmpty { listOf("chicken") }
-                    
-                    for (ingredient in proteinIngredients.take(2)) {
-                        val response = apiService.searchRecipesByIngredient(ingredient)
-                        response.meals?.take(8)?.forEach { mealDto ->
+
+                android.util.Log.d("RecipeRepository", "Smart matching with preference: $preference")
+
+                // Parallel API calls for ingredients
+                when (preference) {
+                    DietaryPreference.VEGETARIAN -> {
+                        android.util.Log.d("RecipeRepository", "Using Vegetarian category search")
+                        val response = apiService.searchRecipesByCategory("Vegetarian")
+                        response.meals?.take(15)?.forEach { mealDto ->
                             if (!allRecipes.contains(mealDto.id)) {
                                 allRecipes.add(mealDto.id)
                                 recipeMap[mealDto.id] = mealDto.toRecipe()
                             }
                         }
                     }
-                }
-                else -> {
-                    android.util.Log.d("RecipeRepository", "Comprehensive search with ALL ingredients: $availableIngredients")
-                    
-                    for (ingredient in availableIngredients.take(5)) {
-                        android.util.Log.d("RecipeRepository", "Searching ingredient: $ingredient")
-                        val response = apiService.searchRecipesByIngredient(ingredient)
-                        response.meals?.forEach { mealDto ->
-                            if (!allRecipes.contains(mealDto.id)) {
-                                allRecipes.add(mealDto.id)
-                                recipeMap[mealDto.id] = mealDto.toRecipe()
+                    DietaryPreference.FITNESS -> {
+                        android.util.Log.d("RecipeRepository", "Searching protein-rich ingredients in parallel")
+                        val proteinIngredients = listOf("chicken", "fish", "egg", "beef").filter { protein ->
+                            availableIngredients.any { it.lowercase().contains(protein) }
+                        }.ifEmpty { listOf("chicken") }
+                        
+                        // Parallel search for protein ingredients
+                        val searchJobs = proteinIngredients.take(2).map { ingredient ->
+                            async {
+                                try {
+                                    apiService.searchRecipesByIngredient(ingredient)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+                        }
+                        searchJobs.awaitAll().filterNotNull().forEach { response ->
+                            response.meals?.take(8)?.forEach { mealDto ->
+                                synchronized(allRecipes) {
+                                    if (!allRecipes.contains(mealDto.id)) {
+                                        allRecipes.add(mealDto.id)
+                                        recipeMap[mealDto.id] = mealDto.toRecipe()
+                                    }
+                                }
                             }
                         }
                     }
-                    android.util.Log.d("RecipeRepository", "Total recipes found: ${allRecipes.size}")
-                }
-            }
-
-            val fullMatchRecipes = mutableListOf<Recipe>()
-            val partialMatchRecipes = mutableListOf<Recipe>()
-
-            val availableIngredientSet = availableIngredients.map { it.lowercase().trim() }.toSet()
-            val availableEquipmentSet = availableEquipment.map { it.lowercase().trim() }.toSet()
-
-            data class RecipeWithScore(
-                val recipe: Recipe,
-                val detail: RecipeDetail,
-                val matchPercentage: Double,
-                val equipmentScore: Int
-            )
-            
-            val recipesWithDetails = mutableListOf<RecipeWithScore>()
-            
-            for (recipeId in allRecipes) {
-                val detailResult = getRecipeDetails(recipeId, availableIngredients)
-                if (detailResult.isSuccess) {
-                    val detail = detailResult.getOrNull()
-                    val recipe = recipeMap[recipeId]
-                    if (detail != null && recipe != null) {
-                        val totalIngredients = detail.ingredients.size
-                        val missingCount = detail.missingIngredients.size
-                        val ownedCount = totalIngredients - missingCount
-                        val matchPercentage = if (totalIngredients > 0) {
-                            (ownedCount.toDouble() / totalIngredients.toDouble()) * 100
-                        } else {
-                            0.0
+                    else -> {
+                        android.util.Log.d("RecipeRepository", "Parallel search with ingredients: $availableIngredients")
+                        
+                        // Parallel search for all ingredients (max 3 for speed)
+                        val searchJobs = availableIngredients.take(3).map { ingredient ->
+                            async {
+                                android.util.Log.d("RecipeRepository", "Searching ingredient: $ingredient")
+                                try {
+                                    apiService.searchRecipesByIngredient(ingredient)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
                         }
-                        
-                        val equipmentMatchScore = if (availableEquipmentSet.isNotEmpty() && detail.requiredEquipment.isNotEmpty()) {
-                            val requiredEquipmentSet = detail.requiredEquipment.map { it.lowercase().trim() }.toSet()
-                            val matchingEquipment = requiredEquipmentSet.count { it in availableEquipmentSet }
-                            matchingEquipment
-                        } else {
-                            0
+                        searchJobs.awaitAll().filterNotNull().forEach { response ->
+                            response.meals?.take(10)?.forEach { mealDto ->
+                                synchronized(allRecipes) {
+                                    if (!allRecipes.contains(mealDto.id)) {
+                                        allRecipes.add(mealDto.id)
+                                        recipeMap[mealDto.id] = mealDto.toRecipe()
+                                    }
+                                }
+                            }
                         }
-                        
-                        android.util.Log.d("RecipeRepository", "Recipe: ${recipe.name}, Owned: $ownedCount/$totalIngredients = ${matchPercentage}%")
-                        
-                        recipesWithDetails.add(RecipeWithScore(recipe, detail, matchPercentage, equipmentMatchScore))
+                        android.util.Log.d("RecipeRepository", "Total recipes found: ${allRecipes.size}")
                     }
                 }
-            }
 
-            val sortedRecipes = recipesWithDetails.sortedWith(
-                compareByDescending<RecipeWithScore> { it.matchPercentage }
-                    .thenByDescending { it.equipmentScore }
-            )
-
-            for (recipeWithScore in sortedRecipes) {
-                val updatedRecipe = recipeWithScore.recipe.copy(
-                    matchType = if (recipeWithScore.detail.missingIngredients.isEmpty()) RecipeMatchType.FULL_MATCH else RecipeMatchType.PARTIAL_MATCH,
-                    missingIngredients = recipeWithScore.detail.missingIngredients,
-                    allIngredients = recipeWithScore.detail.ingredients.map { it.name }
+                val fullMatchRecipes = mutableListOf<Recipe>()
+                val partialMatchRecipes = mutableListOf<Recipe>()
+                
+                // Seasonings/condiments that don't count as "main" ingredients
+                val seasonings = setOf(
+                    "salt", "pepper", "sugar", "olive oil", "vegetable oil", "oil", "butter",
+                    "garlic", "onion", "ginger", "soy sauce", "vinegar", "ketchup", "mustard",
+                    "mayonnaise", "hot sauce", "worcestershire sauce", "fish sauce",
+                    "cumin", "paprika", "oregano", "basil", "thyme", "rosemary", "cinnamon",
+                    "chili powder", "curry powder", "turmeric", "bay leaf", "parsley",
+                    "black pepper", "white pepper", "cayenne", "nutmeg", "coriander",
+                    "sesame oil", "honey", "maple syrup", "lemon juice", "lime juice",
+                    "garlic powder", "onion powder", "italian seasoning", "herbs"
                 )
 
-                if (recipeWithScore.detail.missingIngredients.isEmpty()) {
-                    fullMatchRecipes.add(updatedRecipe)
-                } else {
-                    partialMatchRecipes.add(updatedRecipe)
+                data class RecipeWithScore(
+                    val recipe: Recipe,
+                    val detail: RecipeDetail,
+                    val ownedMainIngredients: Int,
+                    val totalMainIngredients: Int,
+                    val matchPercentage: Double
+                )
+                
+                // Limit recipes to process for speed (max 15)
+                val recipesToProcess = allRecipes.take(15)
+                
+                // Parallel fetch of recipe details
+                val detailJobs = recipesToProcess.map { recipeId ->
+                    async {
+                        try {
+                            val detailResult = getRecipeDetails(recipeId, availableIngredients)
+                            if (detailResult.isSuccess) {
+                                val detail = detailResult.getOrNull()
+                                val recipe = recipeMap[recipeId]
+                                if (detail != null && recipe != null) {
+                                    Triple(recipeId, recipe, detail)
+                                } else null
+                            } else null
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
                 }
+                
+                val recipesWithDetails = detailJobs.awaitAll().filterNotNull().mapNotNull { (_, recipe, detail) ->
+                    val totalIngredients = detail.ingredients.size
+                    val missingCount = detail.missingIngredients.size
+                    val ownedCount = totalIngredients - missingCount
+                    val matchPercentage = if (totalIngredients > 0) {
+                        (ownedCount.toDouble() / totalIngredients.toDouble()) * 100
+                    } else {
+                        0.0
+                    }
+                    
+                    // Calculate owned MAIN ingredients (excluding seasonings)
+                    val allIngredientNames = detail.ingredients.map { it.name.lowercase().trim() }
+                    val missingIngredientNames = detail.missingIngredients.map { it.lowercase().trim() }
+                    
+                    val mainIngredients = allIngredientNames.filter { ing ->
+                        !seasonings.any { seasoning -> ing.contains(seasoning) || seasoning.contains(ing) }
+                    }
+                    val ownedMainIngredients = mainIngredients.count { ing ->
+                        !missingIngredientNames.any { missing -> ing == missing || ing.contains(missing) || missing.contains(ing) }
+                    }
+                    
+                    android.util.Log.d("RecipeRepository", "Recipe: ${recipe.name}, OwnedMain: $ownedMainIngredients/${mainIngredients.size}, Total: $ownedCount/$totalIngredients")
+                    
+                    // Filter out recipes with 0 owned main ingredients
+                    if (ownedMainIngredients == 0 && mainIngredients.isNotEmpty()) {
+                        android.util.Log.d("RecipeRepository", "Filtering out: ${recipe.name} (no main ingredients owned)")
+                        null
+                    } else {
+                        RecipeWithScore(recipe, detail, ownedMainIngredients, mainIngredients.size, matchPercentage)
+                    }
+                }
+
+                // Sort by: 1) owned main ingredients count (descending), 2) match percentage
+                val sortedRecipes = recipesWithDetails.sortedWith(
+                    compareByDescending<RecipeWithScore> { it.ownedMainIngredients }
+                        .thenByDescending { it.matchPercentage }
+                )
+
+                for (recipeWithScore in sortedRecipes) {
+                    val updatedRecipe = recipeWithScore.recipe.copy(
+                        matchType = if (recipeWithScore.detail.missingIngredients.isEmpty()) RecipeMatchType.FULL_MATCH else RecipeMatchType.PARTIAL_MATCH,
+                        missingIngredients = recipeWithScore.detail.missingIngredients,
+                        allIngredients = recipeWithScore.detail.ingredients.map { it.name }
+                    )
+
+                    if (recipeWithScore.detail.missingIngredients.isEmpty()) {
+                        fullMatchRecipes.add(updatedRecipe)
+                    } else {
+                        partialMatchRecipes.add(updatedRecipe)
+                    }
+                }
+
+                val filteredFullMatch = applyPreferenceFilter(fullMatchRecipes)
+                val filteredPartialMatch = applyPreferenceFilter(partialMatchRecipes)
+
+                Result.success(Pair(filteredFullMatch, filteredPartialMatch))
             }
-
-            val filteredFullMatch = applyPreferenceFilter(fullMatchRecipes)
-            val filteredPartialMatch = applyPreferenceFilter(partialMatchRecipes)
-
-            Result.success(Pair(filteredFullMatch, filteredPartialMatch))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -212,11 +268,6 @@ class RecipeRepositoryImpl(
         )
         favoriteRecipeDao.insertFavorite(favorite)
     }
-
-    override fun getAllEquipment(): Flow<List<Equipment>> = equipmentDao.getAllEquipment()
-    override suspend fun addEquipment(equipment: Equipment) = equipmentDao.insertEquipment(equipment)
-    override suspend fun deleteEquipment(equipment: Equipment) = equipmentDao.deleteEquipment(equipment)
-    
     
     private suspend fun applyPreferenceFilter(recipes: List<Recipe>): List<Recipe> {
         val preferenceString = userPreferenceDao.getUserPreference().firstOrNull()?.dietaryPreference 

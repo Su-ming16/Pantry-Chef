@@ -31,9 +31,6 @@ class DiscoverRecipesViewModel(
     private val _availableIngredients = MutableStateFlow<List<String>>(emptyList())
     val availableIngredients: StateFlow<List<String>> = _availableIngredients.asStateFlow()
     
-    private val _availableEquipment = MutableStateFlow<List<String>>(emptyList())
-    val availableEquipment: StateFlow<List<String>> = _availableEquipment.asStateFlow()
-    
     private val _currentPreference = MutableStateFlow<DietaryPreference>(DietaryPreference.NONE)
     val currentPreference: StateFlow<DietaryPreference> = _currentPreference.asStateFlow()
     
@@ -42,13 +39,6 @@ class DiscoverRecipesViewModel(
             recipeRepository.getAllIngredients()
                 .collect { ingredients ->
                     _availableIngredients.value = ingredients.map { it.name }
-                }
-        }
-        
-        viewModelScope.launch {
-            recipeRepository.getAllEquipment()
-                .collect { equipment ->
-                    _availableEquipment.value = equipment.map { it.name }
                 }
         }
         
@@ -111,9 +101,7 @@ class DiscoverRecipesViewModel(
         _uiState.value = DiscoverUiState.Loading
         
         viewModelScope.launch {
-            val equipment = _availableEquipment.value
-            android.util.Log.d("DiscoverRecipesVM", "Searching with equipment=$equipment")
-            val result = recipeRepository.searchRecipesWithSmartMatching(ingredients, equipment)
+            val result = recipeRepository.searchRecipesWithSmartMatching(ingredients)
             if (result.isSuccess) {
                 val (fullMatch, partialMatch) = result.getOrNull() ?: Pair(emptyList(), emptyList())
                 android.util.Log.d("DiscoverRecipesVM", "Results: fullMatch=${fullMatch.size}, partialMatch=${partialMatch.size}")
@@ -136,4 +124,3 @@ class DiscoverRecipesViewModel(
         searchWithSmartMatching()
     }
 }
-

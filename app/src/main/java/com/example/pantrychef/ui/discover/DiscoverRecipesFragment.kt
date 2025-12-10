@@ -46,10 +46,7 @@ class DiscoverRecipesFragment : Fragment() {
             val action = DiscoverRecipesFragmentDirections.actionDiscoverRecipesFragmentToRecipeDetailFragment(
                 recipeId = recipe.id
             )
-            val navOptions = androidx.navigation.NavOptions.Builder()
-                .setPopUpTo(findNavController().graph.startDestinationId, false)
-                .build()
-            findNavController().navigate(action, navOptions)
+            findNavController().navigate(action)
         }
         
         binding.rvRecipes.layoutManager = LinearLayoutManager(requireContext())

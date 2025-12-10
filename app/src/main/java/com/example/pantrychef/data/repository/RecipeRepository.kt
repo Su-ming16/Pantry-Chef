@@ -16,21 +16,15 @@ interface RecipeRepository {
     // --- Recipe Functions (Using Clean Domain Models) ---
     suspend fun searchRecipesByIngredient(ingredientName: String): Result<List<Recipe>>
     suspend fun searchRecipesWithSmartMatching(
-        availableIngredients: List<String>,
-        availableEquipment: List<String> = emptyList()
+        availableIngredients: List<String>
     ): Result<Pair<List<Recipe>, List<Recipe>>>
     suspend fun getRecipeDetails(recipeId: String, availableIngredients: List<String> = emptyList()): Result<RecipeDetail?>
 
     // --- Favorite Functions ---
     fun getAllFavorites(): Flow<List<FavoriteRecipe>>
     fun isFavorite(recipeId: String): Flow<Boolean>
-    suspend fun addFavorite(recipe: Recipe) // Accepts the clean Recipe model
+    suspend fun addFavorite(recipe: Recipe)
     suspend fun removeFavorite(recipeId: String)
-
-    // --- Equipment Functions ---
-    fun getAllEquipment(): Flow<List<com.example.pantrychef.data.model.Equipment>>
-    suspend fun addEquipment(equipment: com.example.pantrychef.data.model.Equipment)
-    suspend fun deleteEquipment(equipment: com.example.pantrychef.data.model.Equipment)
     
     // --- User Preference Functions ---
     fun getUserPreference(): Flow<com.example.pantrychef.data.model.UserPreference?>
